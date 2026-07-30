@@ -9,8 +9,8 @@ use super::{ParameterID, SerialCmd, ParserResult};
 pub struct MicrowaveRadar<DELAY:Delay,TX:UsartTx,RX:UsartRx>{
 
     delay: DELAY,
-    tx_write:TX,
-    rx_read:RX,
+    tx:TX,
+    rx:RX,
 
 }
 
@@ -65,8 +65,8 @@ impl<F> Delay for F where F: Fn(u32),
 impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
     /// Creates a driver from a delay function and the TX/RX I/O handles.
-    pub fn new(delay_fn: DELAY, tx_write:TX,rx_read:RX) -> Self {
-        Self { delay:delay_fn,tx_write,rx_read}
+    pub fn new(delay_fn: DELAY, tx:TX,rx:RX) -> Self {
+        Self { delay:delay_fn,tx: tx,rx: rx}
     }
 
     /// Configures the maximum range and delay, loads the default trigger/hold
@@ -128,9 +128,6 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
     }
 
-    pub fn set_report_mode_35byte_frame(&mut self){
-        self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
-    }
 
     /// Reads a single byte, if available, and hands it to `read_fn`.
     pub fn read_byte(&mut self,mut read_fn:impl FnMut( u8)){
@@ -142,7 +139,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
     fn next_byte(&mut self) -> Option<u8> {
         loop {
-            match self.rx_read.read_byte() {
+            match self.rx.read_byte() {
                 Ok(b) => return Some(b),
                 Err(nb::Error::WouldBlock) => {}
                 Err(nb::Error::Other(_err)) => return None,
@@ -186,7 +183,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
         decode: fn(&[u8]) -> RESULT,
     ) -> Option<RESULT>
     {
-        self.tx_write.write_bytes(&data.send);
+        self.tx.write_bytes(&data.send);
 
         self.delay_us(data.delay_us);
 
@@ -212,7 +209,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     /// Returns `true` on a match — or immediately when the command defines no ACK
     /// payload (`result_payload_ack` empty); returns `false` on mismatch or timeout.
     pub fn send_cmd_and_check_ack_result<const S:usize, const R:usize>(&mut self, data:SerialCmd<S,R>) -> bool{
-        self.tx_write.write_bytes(&data.send);
+        self.tx.write_bytes(&data.send);
 
         self.delay_us(data.delay_us);
 
@@ -249,6 +246,9 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
         self.send_cmd_and_check_ack_result(SerialCmd::end_save_config())
     }
 
+    pub fn set_report_mode_35byte_frame(&mut self){
+        self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
+    }
 
 }
 
