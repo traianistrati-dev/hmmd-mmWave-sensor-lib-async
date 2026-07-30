@@ -11,7 +11,7 @@ function, so it runs on any MCU.
 ## Features
 
 - Pure `no_std`, no allocator required — a single dependency on [`libm`](https://crates.io/crates/libm).
-- HAL-independent I/O through three tiny traits (`UsartTx`, `UsartRx`, `DelayMs`),
+- HAL-independent I/O through three tiny traits (`UsartTx`, `UsartRx`, `Delay`),
   blanket-implemented for closures.
 - Build and validate configuration frames: enter config, write/read parameters,
   save to flash.

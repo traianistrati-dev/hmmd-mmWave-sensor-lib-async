@@ -4,15 +4,18 @@ use super::{ParameterID, SerialCmd, ParserResult};
 
 /// High-level driver for the HMMD mmWave sensor.
 ///
-/// Generic over the three I/O traits ([`DelayMs`], [`UsartTx`], [`UsartRx`]),
+/// Generic over the three I/O traits ([`Delay`], [`UsartTx`], [`UsartRx`]),
 /// so it stays independent of any concrete HAL. Construct it with (MicrowaveRadar::new).
-pub struct MicrowaveRadar<DELAY:DelayMs,TX:UsartTx,RX:UsartRx>{
+pub struct MicrowaveRadar<DELAY:Delay,TX:UsartTx,RX:UsartRx>{
 
     delay: DELAY,
     tx_write:TX,
     rx_read:RX,
 
 }
+
+
+
 
 /// Transmits bytes over the sensor's USART link.
 ///
@@ -30,15 +33,16 @@ impl<F> UsartTx for F where F: FnMut(&[u8]),
 
 /// Receives a single byte from the sensor's USART link.
 ///
-/// Blanket-implemented for any `FnMut() -> Option<u8>`. Returns `None` when no
-/// byte is currently available.
+/// Blanket-implemented for any `FnMut() -> Result<u8, nb::Error>.
 pub trait UsartRx {
-    fn read_byte(&mut self) -> Option<u8>;
+    type Error;
+    fn read_byte(&mut self) -> Result<u8, nb::Error<Self::Error>>;
 }
 
-impl<F> UsartRx for F where F: FnMut() -> Option<u8>,
+impl<F,E> UsartRx for F where F: FnMut() -> Result<u8, nb::Error<E>>,
 {
-    fn read_byte(&mut self)-> Option<u8>{
+    type Error = E;
+    fn read_byte(&mut self)-> Result<u8, nb::Error<E>>{
         self()
     }
 }
@@ -46,19 +50,19 @@ impl<F> UsartRx for F where F: FnMut() -> Option<u8>,
 /// Blocking delay used to pace command/response exchanges.
 ///
 /// Blanket-implemented for any `Fn(u32)`. The unit of the argument is defined by
-/// the implementation (the crate passes the value of `SerialCmd::delay_micro_seconds`)
-pub trait DelayMs {
-    fn delay_micro_seconds(&self, ms: u32);
+/// the implementation (the crate passes the value of `SerialCmd::delay_us`)
+pub trait Delay {
+    fn delay_us(&self, ms: u32);
 }
 
-impl<F> DelayMs for F where F: Fn(u32),
+impl<F> Delay for F where F: Fn(u32),
 {
-    fn delay_micro_seconds(&self, ms: u32) {
+    fn delay_us(&self, ms: u32) {
         self(ms);
     }
 }
 
-impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
+impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
     /// Creates a driver from a delay function and the TX/RX I/O handles.
     pub fn new(delay_fn: DELAY, tx_write:TX,rx_read:RX) -> Self {
@@ -129,16 +133,27 @@ impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     }
 
     /// Reads a single byte, if available, and hands it to `read_fn`.
-    pub fn read_byte(&mut self,mut read_fn:impl FnMut(u8)){
-        if let Some(b) = self.rx_read.read_byte() {
-            read_fn(b);
+    pub fn read_byte(&mut self,mut read_fn:impl FnMut( u8)){
+
+        if let Some(b) = self.next_byte() {
+            read_fn(b)
+        }
+    }
+
+    fn next_byte(&mut self) -> Option<u8> {
+        loop {
+            match self.rx_read.read_byte() {
+                Ok(b) => return Some(b),
+                Err(nb::Error::WouldBlock) => {}
+                Err(nb::Error::Other(_err)) => return None,
+            }
         }
     }
 
     /// Blocks using the configured delay function for `ms` time units.
-    pub fn delay_micro_seconds(&self, ms:u32) {
+    pub fn delay_us(&self, ms:u32) {
 
-        self.delay.delay_micro_seconds(ms);
+        self.delay.delay_us(ms);
     }
 
     /// Reads the value of a single parameter from the sensor.
@@ -160,7 +175,7 @@ impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
     }
 
-    /// Sends a command, then parses the reply with `parser` and decodes it with `decoder`.
+    /// Sends a command, then parses the reply with `parser` and decodes it with `decode`.
     ///
     /// Returns the decoded result, or `None` if no valid frame arrives before the
     /// internal idle timeout.
@@ -168,36 +183,28 @@ impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
         &mut self,
         data:SerialCmd<S,0>,
         parser: &mut super::Parser<PAYLOAD_LEN,RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>,
-        decoder: fn(&[u8]) -> RESULT,
+        decode: fn(&[u8]) -> RESULT,
     ) -> Option<RESULT>
     {
         self.tx_write.write_bytes(&data.send);
 
-        self.delay_micro_seconds(data.delay_micro_seconds);
+        self.delay_us(data.delay_us);
 
         parser.clear();
 
-        let mut idle_loops = 0u32;
 
-        loop {
-
-            if let Some(b) = self.rx_read.read_byte() {
-                if parser.feed(b) {
-                    return Some(decoder(&parser.payload));
-                }
-            }else{
-
-                idle_loops += 1;
-                if idle_loops > 50_000 {
-                    break;
-                }
+        while let Some(b) = self.next_byte() {
+            if parser.feed(b) {
+                return Some(decode(&parser.payload));
             }
-
         }
+
 
         None
 
     }
+
+
 
     /// Sends a command and checks whether the received ACK matches the expected
     /// payload.
@@ -207,7 +214,7 @@ impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     pub fn send_cmd_and_check_ack_result<const S:usize, const R:usize>(&mut self, data:SerialCmd<S,R>) -> bool{
         self.tx_write.write_bytes(&data.send);
 
-        self.delay_micro_seconds(data.delay_micro_seconds);
+        self.delay_us(data.delay_us);
 
 
         if data.result_payload_ack.is_empty() {
@@ -216,30 +223,17 @@ impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
         let mut parser = super::Parser::<R, 0, { super::CommandID::None.as_u16() }, true>::new(&super::SEND_HEADER, &super::SEND_TAIL);
 
-        parser.clear();
-
-        let mut idle_loops = 0u32;
-
-        loop {
-
-            if let Some(b) = self.rx_read.read_byte() {
-                if parser.feed(b) {
-
-                    for i in 0..R{
-                        if data.result_payload_ack[i] != parser.payload[i] {
-                            return false;
-                        }
+        while let Some(b) = self.next_byte() {
+            if parser.feed(b) {
+                for i in 0..R{
+                    if data.result_payload_ack[i] != parser.payload[i] {
+                        return false;
                     }
-                    return true;
                 }
-            }else{
-
-                idle_loops += 1;
-                if idle_loops > 50_000 {
-                    break;
-                }
+                return true;
             }
         }
+
         false
 
     }

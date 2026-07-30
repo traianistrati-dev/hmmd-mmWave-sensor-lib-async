@@ -4,7 +4,7 @@
 //! This crate builds and parses the HMMD serial protocol frames: configuration
 //! commands, parameter read/write, and the two reporting modes (normal and
 //! debug/RDMAP). It is HAL-agnostic — you talk to the sensor through three
-//! small traits ([`UsartTx`], [`UsartRx`], [`DelayMs`]), which are implemented
+//! small traits ([`UsartTx`], [`UsartRx`], [`Delay`]), which are implemented
 //! automatically for closures, so it works on any chip.
 //!
 //! # Overview

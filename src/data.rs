@@ -148,6 +148,7 @@ impl CommandID{
 pub const SEND_HEADER:[u8;4] = [0xFD ,0xFC,0xFB,0xFA];
 /// 4-byte tail terminating every command frame sent to the sensor.
 pub const SEND_TAIL:[u8;4] = [0x04 ,0x03,0x02,0x01];
+pub const BAUD_RATE:u32 = 115200;
 
 
 

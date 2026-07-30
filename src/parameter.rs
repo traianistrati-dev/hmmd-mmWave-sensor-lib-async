@@ -87,7 +87,7 @@ impl SerialCmd<14,0>{
                 param_id_2b[0],param_id_2b[1],
                 SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            delay_micro_seconds: 50,
+            delay_us: 50,
             result_payload_ack:[]
         }
 
@@ -164,7 +164,7 @@ impl SerialCmd<18,4>{
                 0x00, 0x00,
                 // SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            delay_micro_seconds: 500,
+            delay_us: 500,
 
         }
     }
