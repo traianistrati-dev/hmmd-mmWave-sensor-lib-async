@@ -119,8 +119,13 @@ impl <DELAY:DelayMs, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
             // Do something after saving the configuration
         }
 
-        self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
+        //self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
+        self.set_report_mode_35byte_frame();
 
+    }
+
+    pub fn set_report_mode_35byte_frame(&mut self){
+        self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
     }
 
     /// Reads a single byte, if available, and hands it to `read_fn`.
