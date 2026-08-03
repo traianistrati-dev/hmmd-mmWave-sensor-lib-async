@@ -66,7 +66,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
     /// Creates a driver from a delay function and the TX/RX I/O handles.
     pub fn new(delay_fn: DELAY, tx:TX,rx:RX) -> Self {
-        Self { delay:delay_fn,tx: tx,rx: rx}
+        Self { delay:delay_fn, tx, rx}
     }
 
     /// Configures the maximum range and delay, loads the default trigger/hold
@@ -77,7 +77,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     ///
     /// **Note:** every parameter must be written before `end_save_config()` for
     /// the configuration to be persisted to the sensor's flash.
-    pub fn set_range_delay_with_default_threshold(&mut self, max_range:u8, delay_sec:u32){
+    pub fn set_range_delay_with_default_thresholds(&mut self, max_range:u8, delay_sec:u32){
 
 
         if self.begin_config() && self.begin_config()
@@ -87,7 +87,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::AbsenseReportDelay, delay_sec as f32))
 
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold00, ParameterID::TriggerThreshold00.default_value()))
-        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold00, ParameterID::HoldThreshold01.default_value()))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold00, ParameterID::HoldThreshold00.default_value()))
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold01, ParameterID::TriggerThreshold01.default_value()))
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold01, ParameterID::HoldThreshold01.default_value()))
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold02, ParameterID::TriggerThreshold02.default_value()))
@@ -118,6 +118,280 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold14, ParameterID::HoldThreshold14.default_value()))
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold15, ParameterID::TriggerThreshold15.default_value()))
         && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold15, ParameterID::HoldThreshold15.default_value()))
+
+        && self.end_save_config(){
+            // Do something after saving the configuration
+        }
+
+        //self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
+        self.set_report_mode_35byte_frame();
+
+    }
+
+
+
+    pub fn set_params_value<>(&mut self, params_values: &[(ParameterID, f32)] ){
+
+        let mut parser_params = super::parameter::ReadParam::new_parser();
+
+
+        let mut value_for_param = | target: ParameterID| -> f32 {
+
+            for (param_id, value) in params_values{
+
+                if param_id == &target {
+                    return  *value;
+
+                }
+            }
+
+            // target.default_value()
+
+            self.get_param_value(target, &mut parser_params)
+            .map(|v| v as f32)
+            .unwrap_or(target.default_value())
+        };
+
+        let range_gate =  value_for_param( ParameterID::RangeGate);
+        let absense_delay =  value_for_param( ParameterID::AbsenseReportDelay);
+
+        let tt00 =  value_for_param( ParameterID::TriggerThreshold00);
+        let ht00 =  value_for_param( ParameterID::HoldThreshold00);
+
+        let tt01 =  value_for_param( ParameterID::TriggerThreshold01);
+        let ht01 =  value_for_param( ParameterID::HoldThreshold01);
+
+        let tt02 =  value_for_param( ParameterID::TriggerThreshold02);
+        let ht02 =  value_for_param( ParameterID::HoldThreshold02);
+
+        let tt03 =  value_for_param( ParameterID::TriggerThreshold03);
+        let ht03 =  value_for_param( ParameterID::HoldThreshold03);
+
+        let tt04 =  value_for_param( ParameterID::TriggerThreshold04);
+        let ht04 =  value_for_param( ParameterID::HoldThreshold04);
+
+        let ht05 =  value_for_param( ParameterID::HoldThreshold06);
+        let tt05 =  value_for_param( ParameterID::TriggerThreshold05);
+
+        let tt06 =  value_for_param( ParameterID::TriggerThreshold06);
+        let ht06 =  value_for_param( ParameterID::HoldThreshold06);
+
+        let tt07 =  value_for_param( ParameterID::TriggerThreshold07);
+        let ht07 =  value_for_param( ParameterID::HoldThreshold07);
+
+        let tt08 =  value_for_param( ParameterID::TriggerThreshold08);
+        let ht08 =  value_for_param( ParameterID::HoldThreshold08);
+
+        let tt09 =  value_for_param( ParameterID::TriggerThreshold09);
+        let ht09 =  value_for_param( ParameterID::HoldThreshold09);
+
+        let tt10 =  value_for_param( ParameterID::TriggerThreshold10);
+        let ht10 =  value_for_param( ParameterID::HoldThreshold10);
+
+        let tt11 =  value_for_param( ParameterID::TriggerThreshold11);
+        let ht11 =  value_for_param( ParameterID::HoldThreshold11);
+
+        let tt12 =  value_for_param( ParameterID::TriggerThreshold12);
+        let ht12 =  value_for_param( ParameterID::HoldThreshold12);
+
+        let tt13 =  value_for_param( ParameterID::TriggerThreshold13);
+        let ht13 =  value_for_param( ParameterID::HoldThreshold13);
+
+        let tt14 =  value_for_param(  ParameterID::TriggerThreshold14);
+        let ht14 =  value_for_param(  ParameterID::HoldThreshold14);
+
+        let tt15 =  value_for_param( ParameterID::TriggerThreshold15);
+        let ht15 =  value_for_param( ParameterID::HoldThreshold15);
+
+
+
+        if self.begin_config() && self.begin_config()
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::RangeGate, range_gate))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::AbsenseReportDelay,absense_delay))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold00,tt00 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold00, ht00))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold01,tt01 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold01, ht01))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold02,tt02 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold02, ht02))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold03,tt03 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold03, ht03))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold04,tt04 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold04, ht04))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold05,tt05 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold05, ht05))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold06,tt06 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold06, ht06))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold07,tt07 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold07, ht07))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold08,tt08 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold08, ht08))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold09,tt09 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold09, ht09))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold10,tt10 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold10, ht10))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold11,tt11 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold11, ht11))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold12,tt12 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold12, ht12))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold13,tt13 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold13, ht13))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold14,tt14 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold14, ht14))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold15,tt15 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold15, ht15))
+
+
+
+        && self.end_save_config(){
+            // Do something after saving the configuration
+        }
+
+        //self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
+        self.set_report_mode_35byte_frame();
+
+    }
+
+
+    pub fn set_param_value(&mut self, param_id:ParameterID, value:f32 ){
+
+        let mut parser_params = super::parameter::ReadParam::new_parser();
+
+
+        let mut value_for_param = | target: ParameterID| -> f32 {
+            if param_id == target {
+                value
+            } else {
+                self.get_param_value(target, &mut parser_params)
+                .map(|v| v as f32)
+                .unwrap_or(target.default_value())
+            }
+        };
+
+        let range_gate =  value_for_param( ParameterID::RangeGate);
+        let absense_delay =  value_for_param( ParameterID::AbsenseReportDelay);
+
+        let tt00 =  value_for_param( ParameterID::TriggerThreshold00);
+        let ht00 =  value_for_param( ParameterID::HoldThreshold00);
+
+        let tt01 =  value_for_param( ParameterID::TriggerThreshold01);
+        let ht01 =  value_for_param( ParameterID::HoldThreshold01);
+
+        let tt02 =  value_for_param( ParameterID::TriggerThreshold02);
+        let ht02 =  value_for_param( ParameterID::HoldThreshold02);
+
+        let tt03 =  value_for_param( ParameterID::TriggerThreshold03);
+        let ht03 =  value_for_param( ParameterID::HoldThreshold03);
+
+        let tt04 =  value_for_param( ParameterID::TriggerThreshold04);
+        let ht04 =  value_for_param( ParameterID::HoldThreshold04);
+
+        let ht05 =  value_for_param( ParameterID::HoldThreshold06);
+        let tt05 =  value_for_param( ParameterID::TriggerThreshold05);
+
+        let tt06 =  value_for_param( ParameterID::TriggerThreshold06);
+        let ht06 =  value_for_param( ParameterID::HoldThreshold06);
+
+        let tt07 =  value_for_param( ParameterID::TriggerThreshold07);
+        let ht07 =  value_for_param( ParameterID::HoldThreshold07);
+
+        let tt08 =  value_for_param( ParameterID::TriggerThreshold08);
+        let ht08 =  value_for_param( ParameterID::HoldThreshold08);
+
+        let tt09 =  value_for_param( ParameterID::TriggerThreshold09);
+        let ht09 =  value_for_param( ParameterID::HoldThreshold09);
+
+        let tt10 =  value_for_param( ParameterID::TriggerThreshold10);
+        let ht10 =  value_for_param( ParameterID::HoldThreshold10);
+
+        let tt11 =  value_for_param( ParameterID::TriggerThreshold11);
+        let ht11 =  value_for_param( ParameterID::HoldThreshold11);
+
+        let tt12 =  value_for_param( ParameterID::TriggerThreshold12);
+        let ht12 =  value_for_param( ParameterID::HoldThreshold12);
+
+        let tt13 =  value_for_param( ParameterID::TriggerThreshold13);
+        let ht13 =  value_for_param( ParameterID::HoldThreshold13);
+
+        let tt14 =  value_for_param(  ParameterID::TriggerThreshold14);
+        let ht14 =  value_for_param(  ParameterID::HoldThreshold14);
+
+        let tt15 =  value_for_param( ParameterID::TriggerThreshold15);
+        let ht15 =  value_for_param( ParameterID::HoldThreshold15);
+
+
+
+        if self.begin_config() && self.begin_config()
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::RangeGate, range_gate))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::AbsenseReportDelay,absense_delay))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold00,tt00 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold00, ht00))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold01,tt01 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold01, ht01))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold02,tt02 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold02, ht02))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold03,tt03 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold03, ht03))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold04,tt04 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold04, ht04))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold05,tt05 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold05, ht05))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold06,tt06 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold06, ht06))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold07,tt07 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold07, ht07))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold08,tt08 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold08, ht08))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold09,tt09 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold09, ht09))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold10,tt10 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold10, ht10))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold11,tt11 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold11, ht11))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold12,tt12 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold12, ht12))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold13,tt13 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold13, ht13))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold14,tt14 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold14, ht14))
+
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::TriggerThreshold15,tt15 ))
+        && self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::HoldThreshold15, ht15))
+
+
 
         && self.end_save_config(){
             // Do something after saving the configuration

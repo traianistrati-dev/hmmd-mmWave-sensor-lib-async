@@ -11,6 +11,7 @@
 /// `RangeGate = N`, the trigger/hold thresholds of gates `00..=N` set the
 /// per-gate detection sensitivity.
 #[repr(u16)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ParameterID{
     /// Maximum detection range, in gates (~70 cm per gate).
     RangeGate = 0x0100,
@@ -107,6 +108,11 @@ impl ParameterID{
             ParameterID::HoldThreshold14 => 17.43,
             ParameterID::HoldThreshold15 => 17.20,
         }
+    }
+
+    /// Returns the command code as a `u16`
+    pub const fn as_u16(self) -> u16 {
+        self as u16
     }
 
 }
