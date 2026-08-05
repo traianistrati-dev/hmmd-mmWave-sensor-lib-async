@@ -1,6 +1,6 @@
 //! High-level driver ([`MicrowaveRadar`]) and the HAL-agnostic I/O traits.
 
-use super::{ParameterID, SerialCmd, ParserResult};
+use super::{ParameterID, SerialCmd, PayloadDecoder};
 
 /// High-level driver for the HMMD mmWave sensor.
 ///
@@ -129,22 +129,21 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
 
 
-    pub fn set_params_value<>(&mut self, params_values: &[(ParameterID, f32)] ){
-
+    pub fn set_params_value(&mut self, params_values: &[(ParameterID, f32)] ){
+		
+		use super::parse_result::InitParser;
         let mut parser_params = super::parameter::ReadParam::new_parser();
 
+        let mut value_for_param = |target: ParameterID| -> f32 {
 
-        let mut value_for_param = | target: ParameterID| -> f32 {
 
             for (param_id, value) in params_values{
 
                 if param_id == &target {
                     return  *value;
-
                 }
             }
 
-            // target.default_value()
 
             self.get_param_value(target, &mut parser_params)
             .map(|v| v as f32)
@@ -295,17 +294,22 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     ///
     /// `parser` must be created with (crate::parameter::ReadParam::new_parser).
     /// Returns `None` on timeout or an invalid reply.
-    pub fn get_param_value<const PAYLOAD_LEN: usize, const RESERVED_LEN: usize, const EXPECTED_CMD_ID: u16,const HAS_DATA_LENGHT: bool>(
+    // pub fn get_param_value<const PAYLOAD_LEN: usize, const RESERVED_LEN: usize, const EXPECTED_CMD_ID: u16,const HAS_DATA_LENGHT: bool>(
+    // &mut self
+    // ,param_id:ParameterID
+    // ,parser:&mut super::Parser<PAYLOAD_LEN,RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>
+
+    pub fn get_param_value<DECODER,const PAYLOAD_LEN: usize, const RESERVED_LEN: usize, const EXPECTED_CMD_ID: u16,const HAS_DATA_LENGHT: bool>(
         &mut self
         ,param_id:ParameterID
-        ,parser:&mut super::Parser<PAYLOAD_LEN,RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>
-    ) -> Option<u32>{
-
+        //,param_parser: super::parameter::ReadParam
+        ,parser:&mut super::Parser<DECODER,PAYLOAD_LEN,RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>
+    ) -> Option<DECODER::Output>  where DECODER:PayloadDecoder
+    {
 
         self.send_cmd_and_get_result(
             SerialCmd::read_param_value(param_id)
             ,parser
-            , super::parameter::ReadParam::decode
         )
 
     }
@@ -314,12 +318,12 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     ///
     /// Returns the decoded result, or `None` if no valid frame arrives before the
     /// internal idle timeout.
-    pub fn send_cmd_and_get_result<const S:usize,const PAYLOAD_LEN: usize, const RESERVED_LEN: usize, const EXPECTED_CMD_ID: u16,const HAS_DATA_LENGHT: bool, RESULT>(
+    pub fn send_cmd_and_get_result<DECODER, const S:usize,const PAYLOAD_LEN: usize, const RESERVED_LEN: usize, const EXPECTED_CMD_ID: u16,const HAS_DATA_LENGHT: bool>(
         &mut self,
         data:SerialCmd<S,0>,
-        parser: &mut super::Parser<PAYLOAD_LEN,RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>,
-        decode: fn(&[u8]) -> RESULT,
-    ) -> Option<RESULT>
+        parser: &mut super::Parser<DECODER, PAYLOAD_LEN,RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>,
+
+    ) -> Option<DECODER::Output> where DECODER:PayloadDecoder
     {
         self.tx.write_bytes(&data.send);
 
@@ -327,10 +331,10 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
 
         parser.clear();
 
-
         while let Some(b) = self.next_byte() {
             if parser.feed(b) {
-                return Some(decode(&parser.payload));
+                // return Some(decode(&parser.payload));
+                return parser.decode_payload();
             }
         }
 
@@ -346,7 +350,7 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
     ///
     /// Returns `true` on a match — or immediately when the command defines no ACK
     /// payload (`result_payload_ack` empty); returns `false` on mismatch or timeout.
-    pub fn send_cmd_and_check_ack_result<const S:usize, const R:usize>(&mut self, data:SerialCmd<S,R>) -> bool{
+    pub fn send_cmd_and_check_ack_result< const S:usize, const R:usize>(&mut self, data:SerialCmd<S,R>) -> bool{
         self.tx.write_bytes(&data.send);
 
         self.delay_us(data.delay_us);
@@ -356,7 +360,9 @@ impl <DELAY:Delay, TX:UsartTx,RX:UsartRx> MicrowaveRadar<DELAY,TX,RX>{
             return true;
         }
 
-        let mut parser = super::Parser::<R, 0, { super::CommandID::None.as_u16() }, true>::new(&super::SEND_HEADER, &super::SEND_TAIL);
+        // type DECODER;
+
+        let mut parser = super::Parser::<(), R, 0, { super::CommandID::None.as_u16() }, true>::new(&super::SEND_HEADER, &super::SEND_TAIL, None);
 
         while let Some(b) = self.next_byte() {
             if parser.feed(b) {

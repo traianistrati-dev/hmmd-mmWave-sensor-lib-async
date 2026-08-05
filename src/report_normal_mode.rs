@@ -1,6 +1,6 @@
 //! Normal reporting mode: the per-frame detection result and its command.
 
-use super::{Parser,ParserResult};
+use super::{Parser,PayloadDecoder};
 
 const CMD_HEADER: [u8; 4] = [0xF4, 0xF3, 0xF2, 0xF1];
 const CMD_TAIL:   [u8; 4] = [0xF8, 0xF7, 0xF6, 0xF5];
@@ -12,27 +12,19 @@ const EXPECTED_CMD_ID: u16  = super::CommandID::None.as_u16();
 const RESERVED_LEN: usize = 0;
 const HAS_DATA_LENGHT: bool = true;
 
-type ParserType<'a> = Parser<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
 
-/// A normal-mode report frame: target presence, distance, and per-gate energies.
-pub struct HmmdFrame {
-    pub present:     bool,
-    pub distance_cm: u16,
-    pub energy:      [u16; 16],
-}
+pub struct Decoder;
+
+pub type DecoderType = Decoder;
+
+type ParserType<'a> = Parser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
 
 
+impl PayloadDecoder for Decoder {
 
-impl <'a>ParserResult<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT, HmmdFrame> for HmmdFrame {
+    type Output = HmmdFrame;
 
-    /// Builds a parser configured for the 35-byte normal-mode frame.
-    fn new_parser() -> ParserType<'a> {
-        ParserType::new(&CMD_HEADER, &CMD_TAIL)
-    }
-
-    /// Decodes the payload into presence flag, distance (cm) and the 16 gate
-    /// energy values (all little-endian).
-    fn decode(payload:&[u8]) -> Self{
+    fn decode(&self, payload: &[u8]) -> Self::Output {
         let present = payload[0] != 0;
         let distance_cm = u16::from_le_bytes([payload[1], payload[2]]);
 
@@ -41,15 +33,37 @@ impl <'a>ParserResult<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_
             energy[i] = u16::from_le_bytes([payload[3 + i * 2], payload[4 + i * 2]]);
         }
 
-        Self {
+        Self::Output {
             present,
             distance_cm,
             energy,
         }
-
     }
-
 }
+
+
+/// A normal-mode report frame: target presence, distance, and per-gate energies.
+pub struct HmmdFrame{
+
+    pub present:     bool,
+    pub distance_cm: u16,
+    pub energy:      [u16; 16],
+}
+
+
+impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT> for HmmdFrame{
+
+     fn new_parser() -> ParserType<'a>{
+
+        ParserType::new(
+            &CMD_HEADER,
+            &CMD_TAIL,
+            Some(DecoderType{})
+        )
+    }
+}
+
+
 
 
 use super::{SerialCmd, CommandID, SEND_HEADER,SEND_TAIL};

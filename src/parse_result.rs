@@ -11,29 +11,33 @@ enum State {
     Tail(usize),
 }
 
-/// Binds a frame type to the parser that produces it and to its decoded output.
-///
-/// The const parameters describe the frame layout:
-/// - `PAYLOAD_LEN` — number of payload bytes.
-/// - `RESERVED_LEN` — number of reserved bytes before the payload.
-/// - `EXPECTED_CMD_ID` — the command id to match
-///   ([`CommandID::None`](crate::CommandID::None) means the frame has no
-///   command-id field).
-/// - `HAS_DATA_LENGHT` — whether the frame includes the 2-byte little-endian
-///   length field after the header (`false` for frames that go straight from
-///   header to payload, such as the RDMAP debug frame).
-///
-/// `RESULT` is the decoded type.
-pub trait ParserResult<'a,
+
+
+pub trait PayloadDecoder {
+    type Output;
+    fn decode(&self, payload: &[u8]) -> Self::Output;
+}
+
+
+impl PayloadDecoder for () {
+    type Output = ();
+
+    fn decode(&self, _: &[u8]) {}
+}
+
+
+pub trait InitParser
+<'a,
+DECODER:PayloadDecoder,
 const PAYLOAD_LEN: usize,
 const RESERVED_LEN: usize,
 const EXPECTED_CMD_ID: u16,
-const HAS_DATA_LENGHT: bool,
-RESULT,
-> {
-    fn new_parser() -> Parser<'a, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID,HAS_DATA_LENGHT>;
-    fn decode(payload: &[u8]) -> RESULT;
+const HAS_DATA_LENGHT: bool
+>
+{
+    fn new_parser() -> Parser<'a,DECODER,  PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID,HAS_DATA_LENGHT>;
 }
+
 
 /// Incremental parser for HMMD frames, driven one byte at a time.
 ///
@@ -41,31 +45,40 @@ RESULT,
 /// complete, valid frame has been assembled, at which point
 /// [`payload`](Parser::payload) holds the useful bytes. Header/length/command-id/
 /// tail are validated along the way and any mismatch resets the machine.
-pub struct Parser<'a,
-const PAYLOAD_LEN: usize,
-const RESERVED_LEN: usize,
-const EXPECTED_CMD_ID: u16,
-const HAS_DATA_LENGHT: bool
-> {
+pub struct Parser
+<'a,
+DECODER,
+const PAYLOAD_LEN:usize,
+const RESERVED_LEN : usize,
+const EXPECTED_CMD_ID : u16,
+const HAS_DATA_LENGHT: bool,
+>
+where DECODER: PayloadDecoder
+
+{
     state: State,
 
     pub header: &'a [u8;4],
-    pub tail: &'a [u8;4],
+    pub tail: &'a [u8; 4],
 
     pub length: u16,
     pub cmd_id: Option<u16>,
     pub reserved: [u8; RESERVED_LEN],
     pub payload: [u8; PAYLOAD_LEN],
+    result_decoder: Option<DECODER> ,
 }
 
 impl<'a,
+DECODER,
 const PAYLOAD_LEN: usize,
 const RESERVED_LEN: usize,
 const EXPECTED_CMD_ID: u16,
 const HAS_DATA_LENGHT: bool
-> Parser<'a, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID,HAS_DATA_LENGHT>
+>
+Parser<'a, DECODER,PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID,HAS_DATA_LENGHT>
+where DECODER: PayloadDecoder
 {
-    pub const fn new(header: &'a[u8;4], tail: &'a [u8;4]) -> Self {
+    pub const fn new(header: &'a[u8;4], tail: &'a [u8;4], result_decoder:Option<DECODER>) -> Self {
         Self {
             state: State::Header(0),
             header,
@@ -74,7 +87,17 @@ const HAS_DATA_LENGHT: bool
             cmd_id: None,
             reserved: [0u8; RESERVED_LEN],
             payload: [0u8; PAYLOAD_LEN],
+            result_decoder
         }
+    }
+
+
+
+    pub fn decode_payload(&self) -> Option<DECODER::Output> {
+        if let Some(decoder) = &self.result_decoder {
+            return Some(decoder.decode(&self.payload));
+        }
+        None
     }
 
     #[inline]

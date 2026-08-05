@@ -1,5 +1,5 @@
 //! Debug reporting mode: the range-Doppler map (RDMAP) frame and its command.
-use super::{Parser,ParserResult, CommandID};
+use super::{Parser,PayloadDecoder, CommandID};
 
 const CMD_HEADER: [u8; 4] = [0xAA, 0xBF, 0x10, 0x14];
 const CMD_TAIL:   [u8; 4] = [0xFD, 0xFC, 0xFB, 0xFA];
@@ -12,26 +12,85 @@ const EXPECTED_CMD_ID: u16  = COMMAND_ID.as_u16();
 const RESERVED_LEN: usize = 0;
 const HAS_DATA_LENGHT: bool = false;
 
-type ParserType<'a> = Parser<'a, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
+pub struct Decoder;
+
+pub type DecoderType = Decoder;
+
+type ParserType<'a> = Parser<'a,DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
 
 /// A range-Doppler map frame (debug mode): a 20 (Doppler) × 16 (range gate)
 /// matrix where each cell is the squared amplitude as a `u32`.
 pub struct HmmdRdmapFrame {
-    pub rdmap:[[u32; 16]; 20]
+    pub rdmap:[[u32; 16]; 20],
 }
 
 
-impl <'a>ParserResult<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT, HmmdRdmapFrame> for HmmdRdmapFrame {
+
+impl PayloadDecoder for DecoderType {
+    type Output = HmmdRdmapFrame;
+    fn decode(&self, payload: &[u8]) -> Self::Output {
+        if payload.len() != PAYLOAD_LEN {
+            return  HmmdRdmapFrame {
+                rdmap:[[0u32; 16]; 20]
+            };
+        }
+
+        let mut rdmap = [[0u32; 16]; 20];
+
+        let mut index = 0;
+
+        for doppler in &mut rdmap {
+
+            for gate in doppler.iter_mut().take(16) {
+
+                *gate = u32::from_le_bytes([
+                        payload[index],
+                        payload[index + 1],
+                        payload[index + 2],
+                        payload[index + 3],
+                ]);
+
+                index += 4;
+            }
+        }
+
+        Self::Output {
+            rdmap
+        }
+    }
+}
+
+
+
+
+
+
+impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT> for HmmdRdmapFrame{
+
+    fn new_parser() -> ParserType<'a>{
+
+        ParserType::new(
+            &CMD_HEADER,
+            &CMD_TAIL,
+            Some(DecoderType{})
+        )
+    }
+}
+
+
+
+/*
+impl <'a>PayloadDecoder<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT, HmmdRdmapFrame> for HmmdRdmapFrame {
 
     /// Builds a parser configured for the 1280-byte RDMAP frame.
-    fn new_parser() -> ParserType<'a> {
+    fn new_parser(&self) -> ParserType<'a> {
         ParserType::new(&CMD_HEADER, &CMD_TAIL)
     }
 
     /// Decodes the 1280-byte payload (320 little-endian `u32` values) into the
     /// 20×16 range-Doppler matrix. Returns a zero-filled frame if the payload
     /// length is unexpected.
-    fn decode(payload:&[u8]) -> Self{
+    fn decode(&self, payload:&[u8]) -> Self{
 
         if payload.len() != PAYLOAD_LEN {
             return  Self {
@@ -65,7 +124,7 @@ impl <'a>ParserResult<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_
     }
 
 }
-
+*/
 
 use super::{SerialCmd, SEND_HEADER,SEND_TAIL};
 

@@ -1,6 +1,6 @@
 //! Parameter read/write commands and the parser for read-parameter replies.
 
-use super::{Parser, ParserResult,SerialCmd, ParameterID, CommandID, SEND_HEADER,SEND_TAIL};
+use super::{Parser, PayloadDecoder,SerialCmd, ParameterID, CommandID, SEND_HEADER,SEND_TAIL};
 
 const CMD_HEADER: [u8; 4] = SEND_HEADER;
 const CMD_TAIL:   [u8; 4] = SEND_TAIL;
@@ -10,25 +10,40 @@ const EXPECTED_CMD_ID: u16  = super::CommandID::ReadParamAck.as_u16();
 const RESERVED_LEN: usize = 2;
 const HAS_DATA_LENGHT: bool = true;
 
-type ParserType<'a> = Parser<'a, PAYLOAD_LEN, RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
+
+pub struct Decoder;
+
+pub type DecoderType = Decoder;
+
+type ParserType<'a> = Parser<'a, DecoderType, PAYLOAD_LEN, RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
+
+impl PayloadDecoder for DecoderType {
+    type Output = u32;
+    fn decode(&self, payload: &[u8]) -> Self::Output {
+        u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]])
+    }
+}
 
 
-/// Marker type for parsing a "read parameter" reply.
-///
-/// Its [`ParserResult`] impl decodes the 4-byte payload into a `u32` value.
+
 pub struct ReadParam;
 
 
-impl <'a>ParserResult<'a, PAYLOAD_LEN, RESERVED_LEN,EXPECTED_CMD_ID, HAS_DATA_LENGHT, u32> for ReadParam {
-    fn new_parser() -> ParserType<'a> {
-        ParserType::new(&CMD_HEADER, &CMD_TAIL)
-    }
+impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT> for ReadParam{
 
+     fn new_parser() -> ParserType<'a>{
 
-    fn decode(payload:&[u8]) -> u32{
-        u32::from_le_bytes([payload[0],payload[1],payload[2],payload[3]])
+        ParserType::new(
+            &CMD_HEADER,
+            &CMD_TAIL,
+            Some(DecoderType{})
+        )
     }
 }
+
+
+
+
 
 
 

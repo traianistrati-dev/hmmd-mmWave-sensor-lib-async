@@ -73,7 +73,7 @@ let delay: Option<u32> = radar.get_param_value(ParameterID::AbsenseReportDelay, 
 In normal report mode the sensor streams frames you can decode with `HmmdFrame`:
 
 ```rust,ignore
-use hmmd_mmwave_sensor::{ParserResult, report_normal_mode::HmmdFrame};
+use hmmd_mmwave_sensor::{PayloadDecoder, report_normal_mode::HmmdFrame};
 
 let mut parser = HmmdFrame::new_parser();
 
