@@ -28,14 +28,14 @@ impl PayloadDecoder for () {
 
 pub trait InitParser
 <'a,
-DECODER:PayloadDecoder,
+DECODER: PayloadDecoder,
 const PAYLOAD_LEN: usize,
 const RESERVED_LEN: usize,
 const EXPECTED_CMD_ID: u16,
-const HAS_DATA_LENGHT: bool
+const HAS_DATA_LENGHT_BYTES: bool
 >
 {
-    fn new_parser() -> Parser<'a,DECODER,  PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID,HAS_DATA_LENGHT>;
+    fn new_parser() -> Parser<'a, DECODER, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES>;
 }
 
 
@@ -48,24 +48,24 @@ const HAS_DATA_LENGHT: bool
 pub struct Parser
 <'a,
 DECODER,
-const PAYLOAD_LEN:usize,
-const RESERVED_LEN : usize,
-const EXPECTED_CMD_ID : u16,
-const HAS_DATA_LENGHT: bool,
+const PAYLOAD_LEN: usize,
+const RESERVED_LEN: usize,
+const EXPECTED_CMD_ID: u16,
+const HAS_DATA_LENGHT_BYTES: bool,
 >
 where DECODER: PayloadDecoder
 
 {
     state: State,
 
-    pub header: &'a [u8;4],
+    pub header: &'a [u8; 4],
     pub tail: &'a [u8; 4],
 
     pub length: u16,
     pub cmd_id: Option<u16>,
     pub reserved: [u8; RESERVED_LEN],
     pub payload: [u8; PAYLOAD_LEN],
-    result_decoder: Option<DECODER> ,
+    result_decoder: Option<DECODER>,
 }
 
 impl<'a,
@@ -73,12 +73,12 @@ DECODER,
 const PAYLOAD_LEN: usize,
 const RESERVED_LEN: usize,
 const EXPECTED_CMD_ID: u16,
-const HAS_DATA_LENGHT: bool
+const HAS_DATA_LENGHT_BYTES: bool
 >
-Parser<'a, DECODER,PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID,HAS_DATA_LENGHT>
+Parser<'a, DECODER, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES>
 where DECODER: PayloadDecoder
 {
-    pub const fn new(header: &'a[u8;4], tail: &'a [u8;4], result_decoder:Option<DECODER>) -> Self {
+    pub const fn new(header: &'a[u8; 4], tail: &'a [u8; 4], result_decoder: Option<DECODER>) -> Self {
         Self {
             state: State::Header(0),
             header,
@@ -136,7 +136,7 @@ where DECODER: PayloadDecoder
     ///
     /// Returns `true` exactly when a complete, valid frame has just been
     /// finalized (the [`payload`](Parser::payload) is then available);
-    /// otherwise returns `false`. When `HAS_DATA_LENGHT` is `false`, the parser
+    /// otherwise returns `false`. When `HAS_DATA_LENGHT_BYTES` is `false`, the parser
     /// skips the length field and goes straight from the header to the next
     /// stage.
     pub fn feed(&mut self, b: u8) -> bool {
@@ -144,7 +144,7 @@ where DECODER: PayloadDecoder
             State::Header(n) => {
                 if b == self.header[n] {
                     self.state = if n == 3 {
-                        if HAS_DATA_LENGHT {
+                        if HAS_DATA_LENGHT_BYTES {
                             State::Length(0, 0)
                         }else{
                             Self::after_length_state()
@@ -226,7 +226,7 @@ where DECODER: PayloadDecoder
                 self.payload[n] = b;
 
 
-                self.state =  if n + 1 == PAYLOAD_LEN {
+                self.state = if n + 1 == PAYLOAD_LEN {
                     State::Tail(0)
                 } else {
                     State::Payload(n + 1)

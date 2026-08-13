@@ -1,37 +1,30 @@
 //! Debug reporting mode: the range-Doppler map (RDMAP) frame and its command.
-use super::{Parser,PayloadDecoder, CommandID};
+use super::{Parser, PayloadDecoder, CommandID};
 
 const CMD_HEADER: [u8; 4] = [0xAA, 0xBF, 0x10, 0x14];
-const CMD_TAIL:   [u8; 4] = [0xFD, 0xFC, 0xFB, 0xFA];
+const CMD_TAIL: [u8; 4] = [0xFD, 0xFC, 0xFB, 0xFA];
 
 const PAYLOAD_LEN: usize = 1280;
 
-const COMMAND_ID: CommandID  = CommandID::ReportMode;
+const COMMAND_ID: CommandID = CommandID::ReportMode;
 
-const EXPECTED_CMD_ID: u16  = COMMAND_ID.as_u16();
+const EXPECTED_CMD_ID: u16 = COMMAND_ID.as_u16();
 const RESERVED_LEN: usize = 0;
-const HAS_DATA_LENGHT: bool = false;
+const HAS_DATA_LENGHT_BYTES: bool = false;
 
 pub struct Decoder;
 
-pub type DecoderType = Decoder;
+type DecoderType = Decoder;
 
-type ParserType<'a> = Parser<'a,DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
-
-/// A range-Doppler map frame (debug mode): a 20 (Doppler) × 16 (range gate)
-/// matrix where each cell is the squared amplitude as a `u32`.
-pub struct HmmdRdmapFrame {
-    pub rdmap:[[u32; 16]; 20],
-}
-
+type ParserType<'a> = Parser<'a, DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES>;
 
 
 impl PayloadDecoder for DecoderType {
     type Output = HmmdRdmapFrame;
     fn decode(&self, payload: &[u8]) -> Self::Output {
         if payload.len() != PAYLOAD_LEN {
-            return  HmmdRdmapFrame {
-                rdmap:[[0u32; 16]; 20]
+            return HmmdRdmapFrame {
+                rdmap: [[0u32; 16]; 20]
             };
         }
 
@@ -60,12 +53,14 @@ impl PayloadDecoder for DecoderType {
     }
 }
 
+/// A range-Doppler map frame (debug mode): a 20 (Doppler) × 16 (range gate)
+/// matrix where each cell is the squared amplitude as a `u32`.
+pub struct HmmdRdmapFrame {
+    pub rdmap: [[u32; 16]; 20],
+}
 
 
-
-
-
-impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT> for HmmdRdmapFrame{
+impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES> for HmmdRdmapFrame{
 
     fn new_parser() -> ParserType<'a>{
 
@@ -80,7 +75,7 @@ impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_
 
 
 /*
-impl <'a>PayloadDecoder<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT, HmmdRdmapFrame> for HmmdRdmapFrame {
+impl <'a>PayloadDecoder<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES, HmmdRdmapFrame> for HmmdRdmapFrame {
 
     /// Builds a parser configured for the 1280-byte RDMAP frame.
     fn new_parser(&self) -> ParserType<'a> {
@@ -126,7 +121,7 @@ impl <'a>PayloadDecoder<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DAT
 }
 */
 
-use super::{SerialCmd, SEND_HEADER,SEND_TAIL};
+use super::{SerialCmd, SEND_HEADER, SEND_TAIL};
 
 /// Frame builder for switching the sensor into debug mode.
 //send FD FC FB FA 08 00 12 00 00 00 00 00 00 00 04 03 02 01
@@ -163,7 +158,7 @@ B4 00 00 00 48 00 00 00 02 00 00 00 04 00 00 00 04 00 00 00 19 00 00 00 05 00 00
 8A 01 00 00 75 00 00 00 1A 00 00 00 05 00 00 00 00 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00 05 00 00 00 01 00 00 00 05 00 00 00 01 00 00 00 05 00 00 00 0A 00 00 00 04 00 00 00 05 00 00 00 
 FD FC FB FA
 */
-impl SerialCmd<18,0>{
+impl SerialCmd<18, 0>{
     pub fn set_report_debug_mode() -> Self{
 
         let cmd_id_2b = COMMAND_ID.get_bytes();
@@ -172,13 +167,13 @@ impl SerialCmd<18,0>{
         Self {
             send: [
                 SEND_HEADER[0], SEND_HEADER[1], SEND_HEADER[2], SEND_HEADER[3],
-                0x08, 0x00,//data lenght
+                0x08, 0x00, //data lenght
                 cmd_id_2b[0], cmd_id_2b[1],
-                0x00, 0x00,0x00, 0x00,0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            result_payload_ack:[],
-            delay_us: 50,
+            result_payload_ack: [],
+            delay_us: 100,
         }
     }
 

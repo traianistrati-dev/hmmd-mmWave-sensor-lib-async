@@ -26,3 +26,4 @@ doctest = false
 # embedded-hal = "1.0"
 libm = "0.2.16"
 nb = "1.1.0"
+embedded-hal = "1.0.0"

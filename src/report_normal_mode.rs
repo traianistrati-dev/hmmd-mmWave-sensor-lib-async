@@ -1,23 +1,23 @@
 //! Normal reporting mode: the per-frame detection result and its command.
 
-use super::{Parser,PayloadDecoder};
+use super::{Parser, PayloadDecoder};
 
 const CMD_HEADER: [u8; 4] = [0xF4, 0xF3, 0xF2, 0xF1];
-const CMD_TAIL:   [u8; 4] = [0xF8, 0xF7, 0xF6, 0xF5];
+const CMD_TAIL: [u8; 4] = [0xF8, 0xF7, 0xF6, 0xF5];
 
 /// Payload = 1 (status) + 2 (distance cm) + 32 (16 gates energy)
 const PAYLOAD_LEN: usize = 35;
 
-const EXPECTED_CMD_ID: u16  = super::CommandID::None.as_u16();
+const EXPECTED_CMD_ID: u16 = super::CommandID::None.as_u16();
 const RESERVED_LEN: usize = 0;
-const HAS_DATA_LENGHT: bool = true;
+const HAS_DATA_LENGHT_BYTES: bool = true;
 
 
 pub struct Decoder;
 
-pub type DecoderType = Decoder;
+type DecoderType = Decoder;
 
-type ParserType<'a> = Parser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT>;
+type ParserType<'a> = Parser<'a, DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES>;
 
 
 impl PayloadDecoder for Decoder {
@@ -45,15 +45,15 @@ impl PayloadDecoder for Decoder {
 /// A normal-mode report frame: target presence, distance, and per-gate energies.
 pub struct HmmdFrame{
 
-    pub present:     bool,
+    pub present: bool,
     pub distance_cm: u16,
-    pub energy:      [u16; 16],
+    pub energy: [u16; 16],
 }
 
 
-impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT> for HmmdFrame{
+impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES> for HmmdFrame{
 
-     fn new_parser() -> ParserType<'a>{
+    fn new_parser() -> ParserType<'a>{
 
         ParserType::new(
             &CMD_HEADER,
@@ -66,7 +66,7 @@ impl<'a> super::parse_result::InitParser<'a,DecoderType, PAYLOAD_LEN,  RESERVED_
 
 
 
-use super::{SerialCmd, CommandID, SEND_HEADER,SEND_TAIL};
+use super::{SerialCmd, CommandID, SEND_HEADER, SEND_TAIL};
 
 /// Frame builder for switching the sensor into normal report mode.
 ///
@@ -82,7 +82,7 @@ use super::{SerialCmd, CommandID, SEND_HEADER,SEND_TAIL};
 //DA A3 C9 D8 39 08 12 00 28 00 94 00 44 00 91 00 31 00 7A 00 6D 00 52 00 6D 00 35 00 65 00 41 00
 //16 (total number of distance gates) * 2 bytes, size of energy value for each distance gate from 0 to 15
 //F8 F7 F6 F5
-impl SerialCmd<18,0>{
+impl SerialCmd<18, 0>{
     pub fn set_report_mode() -> Self{
 
         let cmd_id_2b = CommandID::ReportMode.get_bytes();
@@ -91,13 +91,13 @@ impl SerialCmd<18,0>{
         Self {
             send: [
                 SEND_HEADER[0], SEND_HEADER[1], SEND_HEADER[2], SEND_HEADER[3],
-                0x08, 0x00,//data lenght
+                0x08, 0x00, //data lenght
                 cmd_id_2b[0], cmd_id_2b[1],
-                0x00, 0x00,0x04, 0x00,0x00, 0x00,
+                0x00, 0x00, 0x04, 0x00, 0x00, 0x00,
                 SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            result_payload_ack:[],
-            delay_us: 50,
+            result_payload_ack: [],
+            delay_us: 100,
         }
     }
 

@@ -117,7 +117,7 @@ pub enum ParameterID{
 
 impl ParameterID{
     /// Serializes the identifier into its 2 big-endian bytes as sent in a command frame.
-    pub fn get_bytes(self) -> [u8;2]{
+    pub fn get_bytes(self) -> [u8; 2]{
         (self as u16).to_be_bytes()
     }
     /// Returns the manufacturer default value for this parameter.
@@ -186,13 +186,13 @@ pub enum CommandID{
     ReadParamAck = 0x0801,
     ReadFirmwareVersion = 0x0000,
     ReadSerialNumber = 0x1100,
-    ReportMode = 0x1200,//64 00 00 00 = Basic (ASCII ON RangeGate 1234 or OFF); 04 00 00 00 = RangeGate with energy; 00 00 00 00 = 20Dopple * 16EnergyGates
+    ReportMode = 0x1200, //64 00 00 00 = Basic (ASCII ON RangeGate 1234 or OFF); 04 00 00 00 = RangeGate with energy; 00 00 00 00 = 20Dopple * 16EnergyGates
     None = 0xFFFF,
 }
 
 impl CommandID{
     /// Serializes the command code into its 2 big-endian bytes.f
-    pub fn get_bytes(self) -> [u8;2]{
+    pub fn get_bytes(self) -> [u8; 2]{
         (self as u16).to_be_bytes()
     }
     /// Returns the command code as a `u16`, usable in `const` context
@@ -204,10 +204,10 @@ impl CommandID{
 }
 
 /// 4-byte header prefixing every command frame sent to the sensor.
-pub const SEND_HEADER:[u8;4] = [0xFD ,0xFC,0xFB,0xFA];
+pub const SEND_HEADER: [u8; 4] = [0xFD, 0xFC, 0xFB, 0xFA];
 /// 4-byte tail terminating every command frame sent to the sensor.
-pub const SEND_TAIL:[u8;4] = [0x04 ,0x03,0x02,0x01];
-pub const BAUD_RATE:u32 = 115200;
+pub const SEND_TAIL: [u8; 4] = [0x04, 0x03, 0x02, 0x01];
+pub const BAUD_RATE: u32 = 115200;
 
 
 

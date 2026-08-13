@@ -12,12 +12,12 @@ fn main(){
 
 
 
-    let (mut _tx1, mut _rx1) = /*USART 115200 baud, data bits 8, Parity None, Stop bit 1*/((),());
+    let (mut _tx1, mut _rx1) = /*USART 115200 baud, data bits 8, Parity None, Stop bit 1*/((), ());
 
     //------------------------------------------------------------------
     // Required closure functions
 
-    let delay_micro_seconds_fn = |us:u32|{
+    let delay_micro_seconds_fn = |us: u32|{
         // cortex_m::asm::delay(us.saturating_mul(&clocks.sysclk().to_Hz() / 1_000_000));
     };
 
@@ -54,17 +54,17 @@ fn main(){
 
     let mut params_parser = super::parameter::ReadParam::new_parser();
 
-    let radar_range_gate_val: Option<u32> = radar.get_param_value(ParameterID::RangeGate , &mut params_parser);
+    let radar_range_gate_val: Option<u32> = radar.get_param_value(ParameterID::RangeGate, &mut params_parser);
 
-    let radar_delay_gate_val:Option<u32> = radar.get_param_value(ParameterID::AbsenseReportDelay,  &mut params_parser);
+    let radar_delay_gate_val: Option<u32> = radar.get_param_value(ParameterID::AbsenseReportDelay, &mut params_parser);
 
-    let radar_tt_00_val:Option<u32> = radar.get_param_value(ParameterID::TriggerThreshold00,  &mut params_parser);
+    let radar_tt_00_val: Option<u32> = radar.get_param_value(ParameterID::TriggerThreshold00, &mut params_parser);
 
-    let radar_ht_00_val:Option<u32> = radar.get_param_value(ParameterID::HoldThreshold00,  &mut params_parser);
+    let radar_ht_00_val: Option<u32> = radar.get_param_value(ParameterID::HoldThreshold00, &mut params_parser);
 
     use super::parse_result::decode_threschold_value;
-    let tt00_values:f32 = decode_threschold_value(radar_tt_00_val.unwrap_or_default());
-    let ht00_values:f32 = decode_threschold_value(radar_ht_00_val.unwrap_or_default());
+    let tt00_values: f32 = decode_threschold_value(radar_tt_00_val.unwrap_or_default());
+    let ht00_values: f32 = decode_threschold_value(radar_ht_00_val.unwrap_or_default());
 
 
 
