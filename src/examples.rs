@@ -17,7 +17,7 @@ fn main(){
     //------------------------------------------------------------------
     // Required closure functions
 
-    let delay_micro_seconds_fn = |us: u32|{
+    let delay_milli_seconds_fn = |us: u32|{
         // cortex_m::asm::delay(us.saturating_mul(&clocks.sysclk().to_Hz() / 1_000_000));
     };
 
@@ -37,7 +37,7 @@ fn main(){
     //------------------------------------------------------------------
     //radar instance
     use super::parse_result::InitParser;
-    let mut radar = super::MicrowaveRadar::new(delay_micro_seconds_fn, usart1_tx_write_fn, usart1_rx_read_fn);
+    let mut radar = super::MicrowaveRadar::new(delay_milli_seconds_fn, usart1_tx_write_fn, usart1_rx_read_fn);
 
 
     //set parameters values

@@ -54,7 +54,7 @@ impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_
 /// # Example
 ///
 /// ```ignore
-/// let delay_micro_seconds_fn = |ms: u32| {
+/// let delay_milli_seconds_fn = |ms: u32| {
 ///     cortex_m::asm::delay(ms.saturating_mul(&clocks.sysclk().to_Hz() / 1_000_000));
 /// };
 ///
@@ -70,7 +70,7 @@ impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_
 /// };
 ///
 /// let mut radar = hmmd_mmwave_sensor::MicrowaveRadar::new(
-///     delay_micro_seconds_fn, usart1_tx_write_fn, usart1_rx_read_fn,
+///     delay_milli_seconds_fn, usart1_tx_write_fn, usart1_rx_read_fn,
 /// );
 ///
 /// let mut parser_params = hmmd_mmwave_sensor::parameter::ReadParam::new_parser();
@@ -102,7 +102,7 @@ impl SerialCmd<14, 0>{
                 param_id_2b[0], param_id_2b[1],
                 SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            delay_us: 2,
+            delay_us: 2000,
             result_payload_ack: []
         }
 
@@ -179,7 +179,7 @@ impl SerialCmd<18, 4>{
                 0x00, 0x00,
                 // SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            delay_us: 2,
+            delay_us: 2000,
 
         }
     }

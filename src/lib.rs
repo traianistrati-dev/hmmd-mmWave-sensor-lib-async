@@ -40,16 +40,29 @@ pub mod send_models;
 pub mod parse_result;
 pub mod parameter;
 pub mod radar;
+pub mod radar_io;
+pub mod radar_io_async;
 pub mod report_debug_mode;
 pub mod report_normal_mode;
 
 
 pub use radar::*;
+pub use radar_io::*;
+pub use radar_io_async::*;
 pub use send_models::*;
 pub use parse_result::*;
 pub use report_debug_mode::*;
 
 // pub mod examples;
+
+
+
+/// 4-byte header prefixing every command frame sent to the sensor.
+pub const SEND_HEADER: [u8; 4] = [0xFD, 0xFC, 0xFB, 0xFA];
+/// 4-byte tail terminating every command frame sent to the sensor.
+pub const SEND_TAIL: [u8; 4] = [0x04, 0x03, 0x02, 0x01];
+
+pub const BAUD_RATE: u32 = 115200;
 
 
 /// Protocol constants: parameter/command identifiers and frame delimiters.
@@ -203,11 +216,7 @@ impl CommandID{
 
 }
 
-/// 4-byte header prefixing every command frame sent to the sensor.
-pub const SEND_HEADER: [u8; 4] = [0xFD, 0xFC, 0xFB, 0xFA];
-/// 4-byte tail terminating every command frame sent to the sensor.
-pub const SEND_TAIL: [u8; 4] = [0x04, 0x03, 0x02, 0x01];
-pub const BAUD_RATE: u32 = 115200;
+
 
 
 
