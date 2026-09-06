@@ -21,11 +21,11 @@
 //! # Example
 //!
 //! ```ignore
-//! let delay_us = |us: u32| { /* busy-wait `us` microseconds */ };
+//! let delay_ns = |us: u32| { /* busy-wait `us` microseconds */ };
 //! let tx = |bytes: &[u8]| { /* write bytes to the UART */ };
 //! let rx = || -> Option<u8> { /* read one byte if available */ None };
 //!
-//! let mut radar = hmmd_mmwave_sensor::MicrowaveRadar::new(delay_us, tx, rx);
+//! let mut radar = hmmd_mmwave_sensor::MicrowaveRadar::new(delay_ns, tx, rx);
 //!
 //! let mut parser = hmmd_mmwave_sensor::parameter::ReadParam::new_parser();
 //! let range = radar.get_param_value(
@@ -39,14 +39,14 @@
 pub mod send_models;
 pub mod parse_result;
 pub mod parameter;
-pub mod radar;
+pub mod radar_fn;
 pub mod radar_io;
 pub mod radar_io_async;
 pub mod report_debug_mode;
 pub mod report_normal_mode;
 
 
-pub use radar::*;
+pub use radar_fn::*;
 pub use radar_io::*;
 pub use radar_io_async::*;
 pub use send_models::*;
@@ -54,7 +54,6 @@ pub use parse_result::*;
 pub use report_debug_mode::*;
 
 // pub mod examples;
-
 
 
 /// 4-byte header prefixing every command frame sent to the sensor.
@@ -217,7 +216,42 @@ impl CommandID{
 }
 
 
+// <Radar Errors>
+use embedded_io::ReadExactError;
 
+
+/// Everything that can go wrong while talking to the sensor.
+#[derive(Debug)]
+pub enum RadarError<TxErr, RxErr> {
+    /// Writing the command frame to the UART failed.
+    Tx(TxErr),
+    /// Reading the reply failed.
+    Rx(RxErr),
+    /// The link closed before a byte arrived (EOF).
+    Eof,
+    /// A reply arrived, but it does not match the expected ACK payload.
+    UnexpectedAck,
+}
+
+impl<TxErr, RxErr> From<ReadExactError<RxErr>> for RadarError<TxErr, RxErr> {
+    fn from(e: ReadExactError<RxErr>) -> Self {
+        match e {
+            ReadExactError::UnexpectedEof => RadarError::Eof,
+            ReadExactError::Other(e) => RadarError::Rx(e),
+        }
+    }
+}
+
+
+/// Error produced by any `MicrowaveRadar` operation.
+///
+/// Written with fully qualified projections on purpose: bounds on type aliases
+/// are not enforced, so `TX: Write` is checked at the use site instead.
+pub type RadarIoError<TX, RX> = RadarError<<TX as embedded_io::ErrorType>::Error, <RX as embedded_io::ErrorType>::Error>;
+
+/// Shorthand for every fallible method of this driver.
+pub type RadarIoResult<T, TX, RX> = Result<T, RadarIoError<TX, RX>>;
+// </Radar Errors>
 
 
 

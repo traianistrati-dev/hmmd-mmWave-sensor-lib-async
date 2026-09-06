@@ -1,23 +1,18 @@
 
-
-
-
-
-
-use super::ParameterID;
-
-
+use crate::ParameterID;
 
 fn main(){
 
 
 
-    let (mut _tx1, mut _rx1) = /*USART 115200 baud, data bits 8, Parity None, Stop bit 1*/((), ());
+    let (mut _tx, mut _rx) = /*USART 115200 baud, data bits 8, Parity None, Stop bit 1*/((), ());
+
+
 
     //------------------------------------------------------------------
     // Required closure functions
 
-    let delay_milli_seconds_fn = |us: u32|{
+    let delay_miliseconds_fn = |us: u32|{
         // cortex_m::asm::delay(us.saturating_mul(&clocks.sysclk().to_Hz() / 1_000_000));
     };
 
@@ -29,21 +24,21 @@ fn main(){
         // _tx1.flush().unwrap_or_default();
     };
 
-    let usart1_rx_read_fn = || -> Result<u8, nb::Error<()/*stm32f1xx_hal::serial::Error*/>> {
+    let usart1_rx_read_fn = || -> Result<u8, nb::Error<()>> {
 
         // _rx1.read()
         Ok(0)
     };
     //------------------------------------------------------------------
     //radar instance
-    use super::parse_result::InitParser;
-    let mut radar = super::MicrowaveRadar::new(delay_milli_seconds_fn, usart1_tx_write_fn, usart1_rx_read_fn);
+    use crate::parse_result::InitParser;
+    let mut radar = crate::MicrowaveRadar::new(delay_miliseconds_fn, usart1_tx_write_fn, usart1_rx_read_fn);
 
 
     //set parameters values
     radar.set_params_value(&[
-            (ParameterID::AbsenseReportDelay, 5.0),
             (ParameterID::RangeGate, 1.0),
+            (ParameterID::AbsenseReportDelay, 5.0),
             // (ParameterID::HoldThreshold00, ParameterID::HoldThreshold00.default_value())
             //(ParameterID::HoldThreshold15, 20.0)
     ]);
@@ -52,7 +47,7 @@ fn main(){
 
     //Read parameters values
 
-    let mut params_parser = super::parameter::ReadParam::new_parser();
+    let mut params_parser = crate::parameter::ReadParam::new_parser();
 
     let radar_range_gate_val: Option<u32> = radar.get_param_value(ParameterID::RangeGate, &mut params_parser);
 
@@ -62,7 +57,7 @@ fn main(){
 
     let radar_ht_00_val: Option<u32> = radar.get_param_value(ParameterID::HoldThreshold00, &mut params_parser);
 
-    use super::parse_result::decode_threschold_value;
+    use crate::parse_result::decode_threschold_value;
     let tt00_values: f32 = decode_threschold_value(radar_tt_00_val.unwrap_or_default());
     let ht00_values: f32 = decode_threschold_value(radar_ht_00_val.unwrap_or_default());
 
@@ -72,7 +67,7 @@ fn main(){
     // required before reading data
     radar.set_report_mode_35byte_payload();
     //
-    let mut parser = super::report_normal_mode::HmmdFrame::new_parser();
+    let mut parser = crate::report_normal_mode::HmmdFrame::new_parser();
 
     loop{
         radar.read_byte(|b| {
@@ -99,7 +94,7 @@ fn main(){
     // required before reading data
     radar.set_report_debug_mode_1280byte_payload();
     //
-    let mut rdmap_parser = super::report_debug_mode::HmmdRdmapFrame::new_parser();
+    let mut rdmap_parser = crate::report_debug_mode::HmmdRdmapFrame::new_parser();
 
     loop{
         radar.read_byte(|b| {
@@ -115,10 +110,5 @@ fn main(){
 
         });
     }
-
-
-
-
-
 
 }

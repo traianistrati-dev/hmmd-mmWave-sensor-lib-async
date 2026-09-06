@@ -53,11 +53,11 @@ Wire up your platform's UART and a microsecond delay, then drive the sensor:
 use hmmd_mmwave_sensor::{MicrowaveRadar, data::ParameterID, parameter::ReadParam};
 
 // Platform glue: closures implement the required traits automatically.
-let delay_us = |us: u32| { /* busy-wait `us` microseconds */ };
+let delay_ns = |us: u32| { /* busy-wait `us` microseconds */ };
 let tx = |bytes: &[u8]| { /* write bytes to the UART */ };
 let rx = || -> Option<u8> { /* read one byte if available */ None };
 
-let mut radar = MicrowaveRadar::new(delay_us, tx, rx);
+let mut radar = MicrowaveRadar::new(delay_ns, tx, rx);
 
 // Configure range + delay and load the default per-gate thresholds.
 radar.set_range_delay_with_default_threshold(/* max_range */ 2, /* delay_sec */ 5);

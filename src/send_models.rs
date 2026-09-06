@@ -13,7 +13,7 @@ pub struct SerialCmd<const S: usize, const R: usize>{
 
     pub send: [u8; S],
     pub result_payload_ack: [u8; R],
-    pub delay_us: u32,
+    pub delay_ns: u32,
 
 }
 
@@ -47,7 +47,7 @@ impl SerialCmd<14, 8>{
                 0x02, 0x00, 0x20, 0x00,
                 // SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            delay_us: 2000,
+            delay_ns: 2000,
         }
     }
 }
@@ -80,7 +80,7 @@ impl SerialCmd<12, 4>{
                 0x00, 0x00,
                  //SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
-            delay_us: 2000,
+            delay_ns: 2000,
         }
     }
 
