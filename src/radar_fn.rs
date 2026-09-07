@@ -79,7 +79,7 @@ impl <DELAY: Delay, TX: UsartTx, RX: UsartRx> MicrowaveRadar<DELAY, TX, RX>
     /// the configuration to be persisted to the sensor's flash.
     pub fn set_range_delay_with_default_thresholds(&mut self, max_range: u8, delay_sec: u32){
 
-        if (self.begin_config() && self.begin_config()) {
+        if self.begin_config() && self.begin_config() {
 
             self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::RangeGate, max_range as f32));
             self.send_cmd_and_check_ack_result(SerialCmd::set_param_value(ParameterID::AbsenseReportDelay, delay_sec as f32));

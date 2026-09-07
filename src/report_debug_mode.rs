@@ -73,54 +73,6 @@ impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_
 }
 
 
-
-/*
-impl <'a>PayloadDecoder<'a, PAYLOAD_LEN,  RESERVED_LEN, EXPECTED_CMD_ID, HAS_DATA_LENGHT_BYTES, HmmdRdmapFrame> for HmmdRdmapFrame {
-
-    /// Builds a parser configured for the 1280-byte RDMAP frame.
-    fn new_parser(&self) -> ParserType<'a> {
-        ParserType::new(&CMD_HEADER, &CMD_TAIL)
-    }
-
-    /// Decodes the 1280-byte payload (320 little-endian `u32` values) into the
-    /// 20×16 range-Doppler matrix. Returns a zero-filled frame if the payload
-    /// length is unexpected.
-    fn decode(&self, payload:&[u8]) -> Self{
-
-        if payload.len() != PAYLOAD_LEN {
-            return  Self {
-                rdmap:[[0u32; 16]; 20]
-            };
-        }
-
-        let mut rdmap = [[0u32; 16]; 20];
-
-        let mut index = 0;
-
-        for doppler in &mut rdmap {
-
-            for gate in doppler.iter_mut().take(16) {
-
-                *gate = u32::from_le_bytes([
-                        payload[index],
-                        payload[index + 1],
-                        payload[index + 2],
-                        payload[index + 3],
-                ]);
-
-                index += 4;
-            }
-        }
-
-        Self {
-            rdmap
-        }
-
-    }
-
-}
-*/
-
 use super::{SerialCmd, SEND_HEADER, SEND_TAIL};
 
 /// Frame builder for switching the sensor into debug mode.

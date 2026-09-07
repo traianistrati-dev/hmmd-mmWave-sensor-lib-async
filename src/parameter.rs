@@ -54,7 +54,7 @@ impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_
 /// # Example
 ///
 /// ```ignore
-/// let delay_nanos = |ms: u32| {
+/// let delay_micros = |ms: u32| {
 ///     cortex_m::asm::delay(ms.saturating_mul(&clocks.sysclk().to_Hz() / 1_000_000));
 /// };
 ///
@@ -70,7 +70,7 @@ impl<'a> super::parse_result::InitParser<'a, DecoderType, PAYLOAD_LEN, RESERVED_
 /// };
 ///
 /// let mut radar = hmmd_mmwave_sensor::MicrowaveRadar::new(
-///     delay_nanos, usart1_tx_write_fn, usart1_rx_read_fn,
+///     delay_micros, usart1_tx_write_fn, usart1_rx_read_fn,
 /// );
 ///
 /// let mut parser_params = hmmd_mmwave_sensor::parameter::ReadParam::new_parser();

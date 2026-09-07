@@ -2,13 +2,16 @@
 name        = "hmmd_mmwave_sensor_async"
 version     = "0.1.0"
 edition     = "2024"
+
+authors     = ["Traian Istrati"]
 license     = "MIT"
-description = "HMMD mmWave Sensor USART protocol"
-# Fill these in before `cargo publish`:
-# repository  = "https://github.com/…"
-# readme      = "README.md"
-# keywords    = ["embedded", "no-std"]
-# categories  = ["embedded", "no-std"]
+description = "Async, sync, and closure-based Rust driver for the HMMD mmWave sensor USART protocol"
+
+repository  = "https://github.com/traianistrati-dev/hmmd-mmWave-sensor-lib-async"
+readme      = "README.md"
+
+keywords    = ["hmmd", "mmwave", "sensor", "embedded", "async"]
+categories  = ["embedded", "no-std"]
 
 [lib]
 # The bare-metal target has no `test` crate, so a test/bench/doctest
@@ -31,8 +34,8 @@ libm = "0.2.16"
 nb = "1.1.0"
 embedded-hal = "1.0.0"
 
-
+[dev-dependencies]
 ######### !!! for examples only 
-esp-hal = { version = "~1.1.0", features = ["unstable", "esp32c3"] }
-embassy-time = "0.5" 
+# esp-hal = { version = "~1.1.0", features = ["unstable", "esp32c3"] }
+# embassy-time = "0.5" 
 ######### !!! for examples only 
