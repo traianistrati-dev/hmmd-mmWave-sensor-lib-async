@@ -125,7 +125,7 @@ impl SerialCmd<18, 0>{
                 SEND_TAIL[0], SEND_TAIL[1], SEND_TAIL[2], SEND_TAIL[3],
             ],
             result_payload_ack: [],
-            delay_ns: 100,
+            delay_ns: 1000,
         }
     }
 
