@@ -77,6 +77,7 @@ impl <DELAY: Delay, TX: UsartTx, RX: UsartRx> MicrowaveRadar<DELAY, TX, RX>
     ///
     /// **Note:** every parameter must be written before `end_save_config()` for
     /// the configuration to be persisted to the sensor's flash.
+    #[allow(dead_code)]
     pub fn set_range_delay_with_default_thresholds(&mut self, max_range: u8, delay_sec: u32){
 
         if self.begin_config() && self.begin_config() {
@@ -126,7 +127,7 @@ impl <DELAY: Delay, TX: UsartTx, RX: UsartRx> MicrowaveRadar<DELAY, TX, RX>
     }
 
 
-
+    #[allow(dead_code)]
     pub fn set_params_value(&mut self, params_values: &[(ParameterID, f32)]){
 
         use super::parse_result::InitParser;
@@ -365,10 +366,11 @@ impl <DELAY: Delay, TX: UsartTx, RX: UsartRx> MicrowaveRadar<DELAY, TX, RX>
         self.send_cmd_and_check_ack_result(SerialCmd::end_save_config())
     }
 
+    #[allow(dead_code)]
     pub fn set_report_mode_35byte_payload(&mut self){
         self.send_cmd_and_check_ack_result(SerialCmd::set_report_mode());
     }
-
+    #[allow(dead_code)]
     pub fn set_report_debug_mode_1280byte_payload(&mut self){
         self.send_cmd_and_check_ack_result(SerialCmd::set_report_debug_mode());
     }

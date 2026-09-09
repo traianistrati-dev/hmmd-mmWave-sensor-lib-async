@@ -20,7 +20,9 @@ type ParserType<'a> = Parser<'a, DecoderType, PAYLOAD_LEN, RESERVED_LEN, EXPECTE
 
 
 impl PayloadDecoder for DecoderType {
+
     type Output = HmmdRdmapFrame;
+
     fn decode(&self, payload: &[u8]) -> Self::Output {
         if payload.len() != PAYLOAD_LEN {
             return HmmdRdmapFrame {
